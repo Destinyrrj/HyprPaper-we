@@ -1,5 +1,4 @@
-zimport gi
-
+import gi
 
 
 gi.require_version('Gtk', '4.0')
@@ -135,4 +134,3 @@ if __name__ == "__main__":
 
 
     app.run(None)
-
