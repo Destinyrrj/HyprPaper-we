@@ -31,7 +31,7 @@ This project provides a set of scripts to find, unpack, and display wallpapers f
 -   **Python 3**
 -   **jq:** A command-line JSON processor.
 -   **mpvpaper:** For video wallpapers.
--   **GTK4, gtk4-layer-shell, WebKitGTK & PyGObject:** For web wallpapers.
+-   **GTK4, WebKitGTK & PyGObject:** For web wallpapers.
 
 ## Installation
 
@@ -43,7 +43,7 @@ This project provides a set of scripts to find, unpack, and display wallpapers f
 
 2.  **Install dependencies (for Arch Linux):**
     ```bash
-    yay -S jq mpvpaper gtk4 webkitgtk-6.0 python-gobject gtk4-layer-shell
+    yay -S jq mpvpaper gtk4 webkitgtk-6.0 python-gobject
     ```
 
 3.  **Make the main script executable:**

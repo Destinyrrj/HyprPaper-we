@@ -3,15 +3,10 @@
 # --- Configuration ---
 # Path to the Wallpaper Engine workshop content folder
 WALLPAPER_DIR="~/.steam/steam/steamapps/workshop/content/431960"
-# Your monitor name (find with `hyprctl monitors`)
-MONITOR="DP-1"
+mpvpaper_options="--no-osc --no-osd-bar --no-input-default-bindings --really-quiet --loop-file=inf --no-audio --panscan=1 --no-resume-playback --vf-add=fps=20:round=near"
+
 # Temporary directory for unpacking
 TMP_DIR="/tmp/hyprpaper-we"
-
-# Temporary file to store the PID
-PID_FILE="/tmp/hyprpaper-we.pid"
-# Lock file to prevent race conditions
-LOCK_FILE="/tmp/hyprpaper-we.lock"
 
 # --- Functions ---
 
@@ -39,11 +34,28 @@ read_pid() {
         (
             flock -s 200
             pid=$(cat "$PID_FILE" 2>/dev/null)
-        ) 200>"$LOCK_FILE"
+        )200>"$LOCKFILE"
     fi
     echo "$pid"
 }
-
+stopall() {
+    declare -a pids
+    declare -a locks
+    readarray -t pids < <(find /tmp -maxdepth 1 -name "hyprpaper-we-*.pid" 2>/dev/null)
+    readarray -t locks < <(find /tmp -maxdepth 1 -name "hyprpaper-we-*.lock" 2>/dev/null)
+    
+    for ((i=0; i<${#pids[@]}; i++))
+    do
+        PID_FILE="${pids[$i]}"
+        LOCK_FILE="${locks[$i]}"
+        
+        # Extract the monitor name from PID file (what replaces the *)
+        MONITOR="${PID_FILE#/tmp/hyprpaper-we-}"
+        MONITOR="${MONITOR%.pid}"
+        
+        stop_wallpaper
+    done
+}
 # Function to stop the current wallpaper
 stop_wallpaper() {
     local killed=false
@@ -185,7 +197,7 @@ set_wallpaper() {
         local video_path="$content_root/$file"
         if [ -f "$video_path" ]; then
             echo "Launching mpvpaper for $video_path"
-            mpvpaper -o "--loop-file=inf --no-audio" "$MONITOR" "$video_path" &
+            nice mpvpaper -o "$mpvpaper_options" "$MONITOR" "$video_path" &
             LAST_PID=$!
             write_pid $LAST_PID
         else
@@ -216,15 +228,38 @@ set_wallpaper() {
 # --- Main Logic ---
 
 # Argument Handling
+echo $1
+echo $2
+if [ -n "$2" ]; then
+	MONITOR=$2
+else
+# Your monitor name (find with `hyprctl monitors`)
+	MONITOR="eDP-2"
+fi
+# Temporary file to store the PID
+	PID_FILE="/tmp/hyprpaper-we-$MONITOR.pid"
+# Lock file to prevent race conditions
+	LOCK_FILE="/tmp/hyprpaper-we-$MONITOR.lock"
 case "$1" in
+    stopall)
+	stopall
+	exit 0
+	;;
     stop)
         stop_wallpaper
         exit 0
         ;;
     ""|--help|-h)
-        echo "Usage: ./hyprpaper-we.sh <WALLPAPER_ID> | stop"
+        echo "Usage: ./hyprpaper-we.sh <WALLPAPER_ID> ?monitor" 
+        echo "run the wallpaper with given id"
+        echo "?monitor is optional and can be used to specify the monitor to run the wallpaper on"
         echo "Example: ./hyprpaper-we.sh 123456789"
+	    echo "Example: ./hyprpaper-we.sh 123456789 <monitor>"
+        echo "used to stop the wallpaper on the default or specified monitor:"
         echo "         ./hyprpaper-we.sh stop"
+        echo "         ./hyprpaper-we.sh stop <monitor>"
+        echo "used to stop all wallpapers:"
+        echo "         ./hyprpaper-we.sh stopall"
         exit 0
         ;;
     *)
